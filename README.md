@@ -98,6 +98,24 @@ Relevance Score Hierarchy:
 
 ---
 
+## 📘 Interactive API Documentation
+
+Interactive API documents are generated automatically using OpenAPI 3.0 schema definitions.
+
+💡 **Root URL Redirect**: Visiting the base URL (`http://localhost:8000/`) will automatically redirect you straight to the Swagger UI page for a seamless developer experience!
+
+1.  **Swagger UI Console**: Navigate to [http://localhost:8000/api/schema/swagger-ui/](http://localhost:8000/api/schema/swagger-ui/) (or simply [http://localhost:8000/](http://localhost:8000/)) to test live API calls directly.
+2.  **Redoc Documentation**: Navigate to [http://localhost:8000/api/schema/redoc/](http://localhost:8000/api/schema/redoc/) for a clean, documentation-first format.
+
+### 🔑 Testing Authenticated Endpoints in Swagger:
+1. Trigger the `/api/auth/login` endpoint in the Swagger console (using username and password).
+2. Copy the returned `"token"` (access token) string.
+3. Scroll back to the top of the Swagger UI and click the green **Authorize** button.
+4. Enter: `Bearer <your_copied_token>` (e.g. `Bearer eyJhbGciOi...`) and click **Authorize**.
+5. All product endpoints are now authorized and ready for live testing inside your browser!
+
+---
+
 ## 🐳 Quick Start: Running with Docker (Recommended)
 
 Docker sets up the entire application environment, applies database migrations, imports the 1,000 product catalog from the CSV file, and creates a default admin user.
@@ -113,7 +131,7 @@ Make sure you have [Docker](https://www.docker.com/) installed on your machine.
     docker-compose up --build
     ```
 2.  **Access the Application**:
-    The API server is exposed at `http://localhost:8000`.
+    The API server is exposed at `http://localhost:8000` (which automatically redirects to the Swagger UI).
 3.  **Default Admin Account**:
     An admin account is automatically created on launch:
     *   **Username**: `admin`
@@ -168,22 +186,6 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 The server will start running at `http://127.0.0.1:8000`.
-
----
-
-## 📘 Interactive API Documentation
-
-Interactive API documents are generated automatically using schema annotations.
-
-1.  **Swagger UI Console**: Navigate to [http://localhost:8000/api/schema/swagger-ui/](http://localhost:8000/api/schema/swagger-ui/) to test live API calls.
-2.  **Redoc Documentation**: Navigate to [http://localhost:8000/api/schema/redoc/](http://localhost:8000/api/schema/redoc/) for a clean, documentation-first format.
-
-### 🔑 Testing Authenticated Endpoints in Swagger:
-1. Trigger `/api/auth/login` in the Swagger console (using user credentials).
-2. Copy the returned `"token"` string.
-3. Scroll to the top of Swagger UI and click the green **Authorize** button.
-4. Input: `Bearer <your_copied_token>` and click Authorize.
-5. All product endpoints are now authorized and testable!
 
 ---
 
