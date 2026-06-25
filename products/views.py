@@ -1,9 +1,10 @@
 from django.db.models import Q
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, inline_serializer
 
 from .models import Product
 from .serializers import ProductCreateSerializer, ProductSerializer
@@ -72,6 +73,38 @@ def _compute_relevance(product, query):
 # Views
 # ---------------------------------------------------------------------------
 
+@extend_schema(
+    summary="Search and Rank Products",
+    description=(
+        "Search products with a 3-tier relevance engine:\n\n"
+        "1. **Tier 1 (0.85 - 1.00)**: Category match (boosted if tags match)\n"
+        "2. **Tier 2 (0.50 - 0.80)**: Tag match (exact matches higher than partial)\n"
+        "3. **Tier 3 (0.10 - 0.45)**: Product name/description match\n\n"
+        "Results are sorted by relevance_score descending, then by name."
+    ),
+    parameters=[
+        OpenApiParameter(name='q', description='Search query term', required=True, type=str),
+        OpenApiParameter(name='limit', description='Max results to return (1-100, default 20)', required=False, type=int),
+        OpenApiParameter(name='category_filter', description='Optional exact filter by category name', required=False, type=str),
+    ],
+    responses={
+        200: inline_serializer(
+            name="SearchSuccessResponse",
+            fields={
+                "query": serializers.CharField(),
+                "total_results": serializers.IntegerField(),
+                "limit": serializers.IntegerField(),
+                "results": ProductSerializer(many=True),
+            }
+        ),
+        400: inline_serializer(
+            name="SearchErrorResponse",
+            fields={
+                "detail": serializers.CharField()
+            }
+        )
+    }
+)
 class ProductSearchView(APIView):
     """GET /api/products/search?q=<query>&limit=20&category_filter=<cat>
 
@@ -133,6 +166,17 @@ class ProductSearchView(APIView):
         })
 
 
+@extend_schema(
+    summary="Retrieve Product Details",
+    description="Retrieve a single product's details by its ID.",
+    responses={
+        200: ProductSerializer,
+        404: inline_serializer(
+            name="NotFoundErrorResponse",
+            fields={"detail": serializers.CharField()}
+        )
+    }
+)
 class ProductDetailView(APIView):
     """GET /api/products/<id>/ — Retrieve a single product by its primary key."""
     permission_classes = [IsAuthenticated]
@@ -143,6 +187,24 @@ class ProductDetailView(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    summary="List Products by Category",
+    description="Retrieve all products belonging to a specific category.",
+    responses={
+        200: inline_serializer(
+            name="CategoryProductsSuccessResponse",
+            fields={
+                "category": serializers.CharField(),
+                "total_results": serializers.IntegerField(),
+                "results": ProductSerializer(many=True)
+            }
+        ),
+        404: inline_serializer(
+            name="CategoryNotFoundErrorResponse",
+            fields={"detail": serializers.CharField()}
+        )
+    }
+)
 class ProductByCategoryView(APIView):
     """GET /api/products/category/<category>/ — List all products in a category."""
     permission_classes = [IsAuthenticated]
@@ -165,6 +227,16 @@ class ProductByCategoryView(APIView):
         })
 
 
+@extend_schema(
+    summary="Create a Product (Admin Only)",
+    description="Create a new product with custom tags. Access is restricted to Admin users.",
+    request=ProductCreateSerializer,
+    responses={
+        201: ProductSerializer,
+        400: OpenApiResponse(description="Validation error"),
+        403: OpenApiResponse(description="Forbidden - Admin rights required")
+    }
+)
 class ProductCreateView(APIView):
     """POST /api/products/ — Create a new product (admin only)."""
     permission_classes = [IsAdminUser]
@@ -179,3 +251,4 @@ class ProductCreateView(APIView):
         # Return the full product representation
         output = ProductSerializer(product)
         return Response(output.data, status=status.HTTP_201_CREATED)
+

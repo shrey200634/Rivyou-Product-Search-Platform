@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from .models import Product, Tag
 
@@ -31,9 +32,11 @@ class ProductSerializer(serializers.ModelSerializer):
             'rank_reason',
         ]
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_tags(self, obj):
         """Return tags as a flat list of strings instead of nested objects."""
         return list(obj.tags.values_list('name', flat=True))
+
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
